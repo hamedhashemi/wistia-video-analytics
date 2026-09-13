@@ -15,7 +15,6 @@ from pyspark.sql import DataFrame, Window
 from pyspark.sql import functions as F
 from pyspark.sql import types as T
 
-
 logger = logging.getLogger("wistia_silver_transformation")
 logging.basicConfig(
     level=logging.INFO,

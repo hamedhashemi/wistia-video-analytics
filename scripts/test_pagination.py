@@ -4,7 +4,7 @@ import argparse
 import json
 import os
 import sys
-from datetime import date, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.ingestion.wistia_client import WistiaClient  # noqa: E402
+from src.ingestion.wistia_client import WistiaClient
 
 
 def load_config() -> dict[str, Any]:
@@ -33,7 +33,7 @@ def record_count(value: Any) -> int:
 
 
 def parse_args() -> argparse.Namespace:
-    today = date.today()
+    today = datetime.now(timezone.utc).date()
     parser = argparse.ArgumentParser(
         description="Safely verify Wistia event pagination without printing event values or PII."
     )

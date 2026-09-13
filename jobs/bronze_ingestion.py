@@ -7,12 +7,12 @@ import logging
 import sys
 import time
 import uuid
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
-from typing import Any, Iterable
+from typing import Any
 
 import requests
-
 
 BASE_URL = "https://api.wistia.com"
 RETRYABLE_STATUS_CODES = {429, 500, 502, 503, 504}
@@ -250,7 +250,7 @@ def load_watermarks(s3_client: Any, bucket: str, key: str) -> dict[str, Any]:
         return {}
     parsed = json.loads(body)
     if not isinstance(parsed, dict):
-        raise ValueError("Watermark object must contain a JSON object")
+        raise TypeError("Watermark object must contain a JSON object")
     return parsed
 
 

@@ -4,7 +4,7 @@ import argparse
 import json
 import os
 import sys
-from datetime import date, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.ingestion.wistia_client import WistiaClient, WistiaResponse  # noqa: E402
+from src.ingestion.wistia_client import WistiaClient, WistiaResponse
 
 SENSITIVE_KEY_FRAGMENTS = (
     "ip",
@@ -121,7 +121,7 @@ def print_summary(summary: dict[str, Any]) -> None:
 
 
 def parse_args() -> argparse.Namespace:
-    today = date.today()
+    today = datetime.now(timezone.utc).date()
     parser = argparse.ArgumentParser(
         description="Safely explore Wistia API endpoints without printing PII or the API token."
     )

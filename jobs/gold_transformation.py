@@ -14,7 +14,6 @@ from pyspark.context import SparkContext
 from pyspark.sql import DataFrame, Window
 from pyspark.sql import functions as F
 
-
 logger = logging.getLogger("wistia_gold_transformation")
 logging.basicConfig(
     level=logging.INFO,
