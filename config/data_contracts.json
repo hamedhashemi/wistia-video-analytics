@@ -1,0 +1,126 @@
+{
+  "silver_media": {
+    "grain": "one latest row per media",
+    "key": ["media_id"],
+    "format": "parquet/snappy",
+    "columns": {
+      "media_id": "string",
+      "wistia_numeric_id": "long",
+      "hashed_id": "string",
+      "title": "string",
+      "description": "string",
+      "duration_seconds": "double",
+      "media_type": "string",
+      "status": "string",
+      "archived": "boolean",
+      "progress": "double",
+      "created_at": "timestamp",
+      "updated_at": "timestamp",
+      "folder_id": "long",
+      "folder_hashed_id": "string",
+      "folder_name": "string",
+      "thumbnail_url": "string",
+      "thumbnail_width": "long",
+      "thumbnail_height": "long",
+      "asset_count": "integer",
+      "assets_json": "string",
+      "ingestion_date": "date",
+      "run_id": "string",
+      "ingested_at": "timestamp"
+    }
+  },
+  "silver_media_stats": {
+    "grain": "one media cumulative snapshot per successful Bronze run",
+    "key": ["media_id", "run_id"],
+    "format": "parquet/snappy",
+    "columns": {
+      "media_id": "string",
+      "engagement": "double",
+      "hours_watched": "double",
+      "load_count": "long",
+      "play_count": "long",
+      "play_rate": "double",
+      "visitors": "long",
+      "snapshot_at": "timestamp",
+      "ingestion_date": "date",
+      "run_id": "string"
+    }
+  },
+  "silver_media_daily_stats": {
+    "grain": "one latest observed row per media per date",
+    "key": ["media_id", "stat_date"],
+    "format": "parquet/snappy",
+    "columns": {
+      "media_id": "string",
+      "stat_date": "date",
+      "hours_watched": "double",
+      "load_count": "long",
+      "play_count": "long",
+      "ingested_at": "timestamp",
+      "run_id": "string",
+      "stat_year": "integer",
+      "stat_month": "integer"
+    }
+  },
+  "silver_engagement": {
+    "grain": "one engagement-curve snapshot per media per successful Bronze run",
+    "key": ["media_id", "run_id"],
+    "format": "parquet/snappy"
+  },
+  "silver_events": {
+    "grain": "one latest row per Wistia event",
+    "key": ["event_key"],
+    "format": "parquet/snappy",
+    "pii": ["ip_address", "email"],
+    "columns": {
+      "event_key": "string",
+      "media_id": "string",
+      "visitor_key": "string",
+      "received_at": "timestamp",
+      "percent_viewed": "double",
+      "country": "string",
+      "region": "string",
+      "city": "string",
+      "lat": "double",
+      "lon": "double",
+      "ip_address": "string",
+      "email": "string",
+      "org": "string",
+      "embed_url": "string",
+      "media_name": "string",
+      "media_url": "string",
+      "conversion_type": "string",
+      "browser": "string",
+      "browser_version": "string",
+      "is_mobile": "boolean",
+      "platform": "string",
+      "ingested_at": "timestamp",
+      "run_id": "string",
+      "event_date": "date"
+    }
+  },
+  "silver_visitors": {
+    "grain": "one latest row per visitor",
+    "key": ["visitor_key"],
+    "format": "parquet/snappy",
+    "pii": ["email", "visitor_name"],
+    "columns": {
+      "visitor_key": "string",
+      "created_at": "timestamp",
+      "last_active_at": "timestamp",
+      "last_event_key": "string",
+      "load_count": "long",
+      "play_count": "long",
+      "email": "string",
+      "visitor_name": "string",
+      "organization_name": "string",
+      "organization_title": "string",
+      "browser": "string",
+      "browser_version": "string",
+      "is_mobile": "boolean",
+      "platform": "string",
+      "ingested_at": "timestamp",
+      "run_id": "string"
+    }
+  }
+}

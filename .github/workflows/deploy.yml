@@ -1,0 +1,32 @@
+name: Deploy Glue Scripts
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "jobs/**"
+      - ".github/workflows/deploy.yml"
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Upload Glue scripts to S3
+        run: |
+          aws s3 cp jobs/bronze_ingestion.py s3://${{ vars.S3_BUCKET }}/scripts/bronze_ingestion.py
+          aws s3 cp jobs/silver_transformation.py s3://${{ vars.S3_BUCKET }}/scripts/silver_transformation.py
+          aws s3 cp jobs/gold_transformation.py s3://${{ vars.S3_BUCKET }}/scripts/gold_transformation.py
+          aws s3 cp jobs/commit_watermark.py s3://${{ vars.S3_BUCKET }}/scripts/commit_watermark.py
