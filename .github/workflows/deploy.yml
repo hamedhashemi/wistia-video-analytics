@@ -21,32 +21,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Show OIDC claims
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const token = await core.getIDToken('sts.amazonaws.com');
-            const payload = JSON.parse(
-              Buffer.from(token.split('.')[1], 'base64url').toString()
-            );
-
-            core.info(`sub=${payload.sub}`);
-            core.info(`aud=${payload.aud}`);
-            core.info(`repository=${payload.repository}`);
-            core.info(`repository_id=${payload.repository_id}`);
-            core.info(`repository_owner=${payload.repository_owner}`);
-            core.info(`repository_owner_id=${payload.repository_owner_id}`);
-            core.info(`ref=${payload.ref}`);
-
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::358171523478:role/GitHubActions-WistiaDeploy
-          aws-region: us-east-1
+          role-to-assume: ${{ vars.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ vars.AWS_REGION }}
 
       - name: Upload Glue scripts to S3
         run: |
-          aws s3 cp jobs/bronze_ingestion.py s3://wistia-video-analytics-hh-2026/scripts/bronze_ingestion.py
-          aws s3 cp jobs/silver_transformation.py s3://wistia-video-analytics-hh-2026/scripts/silver_transformation.py
-          aws s3 cp jobs/gold_transformation.py s3://wistia-video-analytics-hh-2026/scripts/gold_transformation.py
-          aws s3 cp jobs/commit_watermark.py s3://wistia-video-analytics-hh-2026/scripts/commit_watermark.py
+          aws s3 cp jobs/bronze_ingestion.py s3://${{ vars.S3_BUCKET }}/scripts/bronze_ingestion.py
+          aws s3 cp jobs/silver_transformation.py s3://${{ vars.S3_BUCKET }}/scripts/silver_transformation.py
+          aws s3 cp jobs/gold_transformation.py s3://${{ vars.S3_BUCKET }}/scripts/gold_transformation.py
+          aws s3 cp jobs/commit_watermark.py s3://${{ vars.S3_BUCKET }}/scripts/commit_watermark.py
