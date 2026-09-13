@@ -1,3 +1,14 @@
+name: Deploy Glue Scripts
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "jobs/**"
+      - ".github/workflows/deploy.yml"
+
 permissions:
   id-token: write
   contents: read
@@ -7,7 +18,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Show OIDC claims
         uses: actions/github-script@v7
@@ -30,11 +42,11 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::358171523478:role/GitHubActions-WistiaDeploy
-          aws-region: ${{ vars.AWS_REGION }}
+          aws-region: us-east-1
 
       - name: Upload Glue scripts to S3
         run: |
-          aws s3 cp jobs/bronze_ingestion.py s3://${{ vars.S3_BUCKET }}/scripts/bronze_ingestion.py
-          aws s3 cp jobs/silver_transformation.py s3://${{ vars.S3_BUCKET }}/scripts/silver_transformation.py
-          aws s3 cp jobs/gold_transformation.py s3://${{ vars.S3_BUCKET }}/scripts/gold_transformation.py
-          aws s3 cp jobs/commit_watermark.py s3://${{ vars.S3_BUCKET }}/scripts/commit_watermark.py
+          aws s3 cp jobs/bronze_ingestion.py s3://wistia-video-analytics-hh-2026/scripts/bronze_ingestion.py
+          aws s3 cp jobs/silver_transformation.py s3://wistia-video-analytics-hh-2026/scripts/silver_transformation.py
+          aws s3 cp jobs/gold_transformation.py s3://wistia-video-analytics-hh-2026/scripts/gold_transformation.py
+          aws s3 cp jobs/commit_watermark.py s3://wistia-video-analytics-hh-2026/scripts/commit_watermark.py
