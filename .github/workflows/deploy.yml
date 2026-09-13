@@ -1,13 +1,3 @@
-name: Deploy Glue Scripts
-
-on:
-  workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - "jobs/**"
-      - ".github/workflows/deploy.yml"
-
 permissions:
   id-token: write
   contents: read
@@ -15,8 +5,26 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
+
+      - name: Show OIDC claims
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const token = await core.getIDToken('sts.amazonaws.com');
+            const payload = JSON.parse(
+              Buffer.from(token.split('.')[1], 'base64url').toString()
+            );
+
+            core.info(`sub=${payload.sub}`);
+            core.info(`aud=${payload.aud}`);
+            core.info(`repository=${payload.repository}`);
+            core.info(`repository_id=${payload.repository_id}`);
+            core.info(`repository_owner=${payload.repository_owner}`);
+            core.info(`repository_owner_id=${payload.repository_owner_id}`);
+            core.info(`ref=${payload.ref}`);
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
