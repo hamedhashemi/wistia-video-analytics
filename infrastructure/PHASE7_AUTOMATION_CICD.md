@@ -1,118 +1,87 @@
-# Phase 7 — Automation, 7-Day Production Run, and CI/CD
+# Phase 7 — Automation, Seven-Day Production Run, and CI/CD
 
-## Goal
+## Glue Workflow
 
-Automate the production chain so each daily run executes only after the prior stage succeeds:
-
-`Bronze ingestion -> Silver transformation -> Gold transformation -> Watermark commit`
-
-The Glue crawler may run after Gold to refresh Data Catalog partitions.
-
-## A. Create the watermark commit Glue job
-
-Upload:
-
-`s3://wistia-video-analytics-hh-2026/scripts/commit_watermark.py`
-
-Create a **Python Shell 3.9** Glue job:
-
-- Job name: `wistia-commit-watermark`
-- IAM role: `AWSGlueServiceRole-WistiaVideoAnalytics`
-- Script location: `s3://wistia-video-analytics-hh-2026/scripts/commit_watermark.py`
-
-Job parameters:
-
-- `--BUCKET_NAME` = `wistia-video-analytics-hh-2026`
-- `--CONTROL_KEY` = `control/watermarks.json`
-- `--AUDIT_PREFIX` = `audit`
-- `--MAX_AGE_HOURS` = `48`
-
-The existing Glue runtime IAM policy must allow `s3:GetObject`, `s3:PutObject`, `s3:DeleteObject`, and `s3:ListBucket` for the project bucket.
-
-## B. Glue Workflow
-
-Create workflow:
+Workflow:
 
 `wistia-video-analytics-workflow`
 
-Create these triggers in the workflow:
+Production chain:
 
-1. **Scheduled trigger** — `wistia-daily-start`
-   - Schedule: daily
-   - Recommended project schedule: `cron(0 10 * * ? *)` (10:00 UTC each day)
-   - Action: start `wistia-bronze-ingestion`
+1. `wistia-daily-start` — scheduled start trigger
+2. `wistia-bronze-ingestion`
+3. `after-bronze-success` — requires Bronze `SUCCEEDED`
+4. `wistia-silver-transformation`
+5. `after-silver-success` — requires Silver `SUCCEEDED`
+6. `wistia-gold-transformation`
+7. `after-gold-success` — requires Gold `SUCCEEDED`
+8. `wistia-commit-watermark`
 
-2. **Conditional trigger** — `after-bronze-success`
-   - Condition: `wistia-bronze-ingestion` = SUCCEEDED
-   - Action: start `wistia-silver-transformation`
+Use Max concurrency = 1 for the production jobs.
 
-3. **Conditional trigger** — `after-silver-success`
-   - Condition: `wistia-silver-transformation` = SUCCEEDED
-   - Action: start `wistia-gold-transformation`
+## Watermark commit job
 
-4. **Conditional trigger** — `after-gold-success`
-   - Condition: `wistia-gold-transformation` = SUCCEEDED
-   - Action: start `wistia-commit-watermark`
+Script:
 
-5. Optional: run `wistia-gold-crawler` after Gold succeeds so Athena sees new partitions.
+`s3://<bucket>/scripts/commit_watermark.py`
 
-Set each Glue job Max concurrency to 1.
+Recommended job type: Glue Python Shell 3.9.
 
-## C. Production watermark behavior
+Parameters:
 
-The Bronze job writes only a candidate watermark to its audit summary.
+- `--BUCKET_NAME`
+- `--CONTROL_KEY=control/watermarks.json`
+- `--AUDIT_PREFIX=audit`
+- `--MAX_AGE_HOURS=48`
 
-The watermark commit job runs only after Gold succeeds, verifies that the latest successful Gold run is newer than the latest successful Bronze run, then writes:
+The Glue runtime role needs S3 read/write/delete/list access to the project bucket as required by the overwrite jobs and control/audit writes.
 
-`control/watermarks.json`
+## CI
 
-This prevents a failed downstream pipeline from advancing state and skipping data.
+`.github/workflows/ci.yml` runs:
 
-## D. Seven-day production run
+```text
+ruff check .
+pytest -q
+```
 
-Run the workflow once daily for seven consecutive days. Do not manually advance the watermark.
+on pull requests and pushes to `main`.
 
-For each day retain evidence of:
+## CD
 
-- Workflow run status
-- Bronze Glue run = SUCCEEDED
-- Silver Glue run = SUCCEEDED
-- Gold Glue run = SUCCEEDED
-- Watermark commit = SUCCEEDED
-- Bronze audit JSON
-- Silver audit JSON
-- Gold audit JSON
-- Watermark commit audit JSON
+`.github/workflows/deploy.yml` deploys the four production scripts when `jobs/**` changes.
 
-Use `docs/SEVEN_DAY_PRODUCTION_EVIDENCE.md` to record the results.
+Repository variables:
 
-## E. GitHub CI/CD
+- `AWS_REGION`
+- `AWS_ROLE_TO_ASSUME`
+- `S3_BUCKET`
 
-### CI
+The AWS role used by GitHub should have least-privilege permission to the S3 `scripts/*` prefix.
 
-`.github/workflows/ci.yml` runs on pull requests and pushes to `main`:
+## GitHub OIDC
 
-- install dependencies
-- Ruff
-- pytest
+AWS identity provider:
 
-### CD
+```text
+token.actions.githubusercontent.com
+Audience: sts.amazonaws.com
+```
 
-`.github/workflows/deploy.yml` deploys the Glue scripts to S3 on changes to `jobs/**`.
+The deployment role trust policy must match the **actual** OIDC subject (`sub`) emitted for the repository/branch. For newer GitHub repositories, the subject can include immutable owner/repository IDs, for example:
 
-Configure the following GitHub repository settings:
+```text
+repo:<owner>@<owner_id>/<repo>@<repo_id>:ref:refs/heads/main
+```
 
-**Repository variables**
+Do not assume the older `repo:owner/repo:ref:...` form. If OIDC returns `Not authorized to perform sts:AssumeRoleWithWebIdentity`, inspect the token claims and align the IAM trust condition with the actual `sub`.
 
-- `AWS_REGION` = `us-east-1`
-- `S3_BUCKET` = `wistia-video-analytics-hh-2026`
+No long-lived AWS access key is required.
 
-**Repository secret**
+## Seven-day run
 
-- `AWS_ROLE_TO_ASSUME` = ARN of a GitHub OIDC deployment role
+Keep the scheduled start trigger enabled. Record each scheduled workflow run in:
 
-The deployment role only needs permission to upload objects under:
+`docs/SEVEN_DAY_PRODUCTION_EVIDENCE.md`
 
-`s3://wistia-video-analytics-hh-2026/scripts/*`
-
-Do not store the Wistia API token in GitHub. The runtime token remains in AWS Secrets Manager.
+The failed and retry runs should remain visible as operational evidence rather than being removed from the record.
