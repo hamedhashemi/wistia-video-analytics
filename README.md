@@ -98,6 +98,27 @@ Scheduled Trigger
 
 See `docs/INCREMENTAL_STRATEGY.md` for details.
 
+
+## Dashboard Preview
+
+The project includes an Amazon Quick dashboard built on top of the Athena Gold-layer data model.
+
+### Key Performance Indicators
+
+![Total Plays and Loads](docs/dashboard/01-dashboard-kpis-plays-loads.png)
+
+![Watch Time and Overall Play Rate](docs/dashboard/02-dashboard-kpis-watchtime-playrate.png)
+
+### Plays Over Time
+
+![Plays Over Time by Media](docs/dashboard/03-dashboard-plays-over-time.png)
+
+### Media Performance
+
+![Media Performance Summary](docs/dashboard/04-dashboard-media-performance.png)
+
+
+
 ## CI/CD
 
 ### CI
